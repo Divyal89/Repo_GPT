@@ -1,0 +1,139 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-primary: #0f0a15;
+  --bg-secondary: #1a0f2e;
+  --bg-card: rgba(42, 26, 62, 0.95);
+  --bg-card-strong: rgba(61, 37, 87, 0.98);
+  --border-color: rgba(236, 72, 153, 0.3);
+  --text-primary: #f472b6;
+  --text-secondary: #ec4899;
+  --text-muted: #9333ea;
+  --primary: #ec4899;
+  --primary-strong: #f472b6;
+  --secondary: #d946ef;
+  --accent: #ec4899;
+  --shadow-soft: 0 0 30px rgba(236, 72, 153, 0.15);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-dark text-pink-300 font-sans antialiased;
+  background: linear-gradient(135deg, #0f0a15 0%, #2a1a3e 50%, #1a0f2e 100%);
+  font-feature-settings: "rounding" 1;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(236, 72, 153, 0.25);
+  color: #f472b6;
+}
+
+code {
+  @apply font-mono text-pink-300;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+  border-left: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 255, 0, 0.8),
+    rgba(0, 204, 0, 0.6)
+  );
+  border-radius: 0;
+  border: 1px solid rgba(0, 255, 0, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 255, 0, 0.95),
+    rgba(0, 255, 68, 0.85)
+  );
+}
+
+@layer components {
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .btn-base {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-none px-4 py-2.5 font-mono font-bold transition-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-green-400;
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 0, 0.3),
+      0 0 16px rgba(0, 255, 0, 0.2),
+      inset 0 0 8px rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.4);
+  }
+
+  .btn-primary {
+    @apply btn-base bg-black text-green-400 hover:bg-green-950 hover:text-green-300 active:translate-y-px;
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 0, 0.5),
+      0 0 20px rgba(0, 255, 0, 0.3),
+      inset 0 0 12px rgba(0, 255, 0, 0.15);
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+  }
+
+  .btn-secondary {
+    @apply btn-base border border-green-400/50 bg-black/80 text-green-400 hover:bg-green-950/30 hover:border-green-300;
+    box-shadow:
+      inset 0 0 12px rgba(0, 255, 0, 0.08),
+      0 0 12px rgba(0, 255, 0, 0.12);
+  }
+
+  .btn-ghost {
+    @apply btn-base border-none bg-transparent text-green-400 hover:text-green-300 hover:bg-green-950/20;
+    box-shadow: 0 0 12px rgba(0, 255, 0, 0.1);
+  }
+
+  .card-base {
+    @apply rounded-none border border-green-400/25 bg-black/75 p-4 backdrop-blur-0 transition-smooth;
+    box-shadow:
+      inset 0 0 12px rgba(0, 255, 0, 0.06),
+      0 0 20px rgba(0, 255, 0, 0.08);
+  }
+
+  .card-base:hover {
+    @apply border-green-300/40;
+    box-shadow:
+      inset 0 0 16px rgba(0, 255, 0, 0.1),
+      0 0 24px rgba(0, 255, 0, 0.12),
+      0 0 40px rgba(0, 255, 0, 0.08);
+  }
+
+  .input-base {
+    @apply w-full rounded-none border border-green-400/25 bg-black/95 px-4 py-2.5 text-green-400 placeholder-green-700 transition-smooth focus:outline-none focus:border-green-300 focus:ring-2 focus:ring-green-400/30 font-mono;
+    box-shadow:
+      inset 0 0 8px rgba(0, 255, 0, 0.05),
+      0 0 12px rgba(0, 255, 0, 0.08);
+  }
+}
