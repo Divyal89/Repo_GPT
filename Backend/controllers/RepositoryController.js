@@ -7,6 +7,9 @@ import {
 } from "../services/githubService.js";
 
 import { chunkRepository } from "../services/chunkService.js";
+
+import { generateBatchEmbeddings } from "../services/aiService.js";
+import { storeEmbeddings } from "../services/vectorService.js";
 // ============================================================
 // CONNECT GITHUB REPOSITORY
 // ============================================================
@@ -114,8 +117,10 @@ export const connectRepository = async (req, res) => {
       "coverage/",
       ".next/",
       "vendor/",
+      "venv/",
+      ".venv/",
+      "__pycache__/",
     ];
-
     const usefulFiles = files.filter((file) => {
       const filePath = file.path.toLowerCase();
 
@@ -192,6 +197,77 @@ export const connectRepository = async (req, res) => {
 
     console.log("Total Chunks:", chunks.length);
 
+    // Check whether this repository is already connected
+    const existingRepository = await Repository.findOne({
+      githubUrl: githubData.html_url,
+      user: req.userId,
+    });
+
+    if (existingRepository) {
+      return res.status(400).json({
+        message: "Repository already connected",
+      });
+    }
+
+    // Create the repository record first
+    // We need its MongoDB _id for the Qdrant metadata
+    const repository = await Repository.create({
+      user: req.userId,
+      name: githubData.name,
+      fullName: githubData.full_name,
+      githubUrl: githubData.html_url,
+      description: githubData.description || "",
+      language: githubData.language || "Unknown",
+      stars: githubData.stargazers_count || 0,
+      files: repositoryFiles.length,
+      status: "indexing",
+    });
+
+    console.log("Repository created:", repository._id);
+    //
+    //Embedding
+    //
+    // Generate embeddings for the repository chunks in batches
+    const batchSize = 50;
+
+    const embeddedChunks = [];
+
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+
+      // Extract only the text because the Python service
+      // expects an array of texts
+      const texts = batch.map((chunk) => chunk.content);
+
+      const result = await generateBatchEmbeddings(texts);
+
+      // Match each embedding with its original chunk
+      for (let j = 0; j < batch.length; j++) {
+        embeddedChunks.push({
+          path: batch[j].path,
+          content: batch[j].content,
+          embedding: result.embeddings[j],
+        });
+      }
+
+      console.log(
+        `Embedded ${Math.min(
+          i + batchSize,
+          chunks.length,
+        )} / ${chunks.length} chunks`,
+      );
+    }
+
+    console.log("Total embedded chunks:", embeddedChunks.length);
+
+    // Store the embeddings in Qdrant
+    await storeEmbeddings(embeddedChunks, repository._id);
+
+    // Mark the repository as ready after successful indexing
+    repository.status = "ready";
+    await repository.save();
+
+    console.log("Repository indexing completed successfully");
     // ----------------------------------------------------------
     // 8. Show ingestion result
     // ----------------------------------------------------------
@@ -212,55 +288,6 @@ export const connectRepository = async (req, res) => {
     // Vector Database
     //
     // This is the main RepoGPT AI pipeline.
-
-    // ----------------------------------------------------------
-    // 9. Check if repository is already connected
-    // ----------------------------------------------------------
-
-    const existingRepository = await Repository.findOne({
-      githubUrl: githubData.html_url,
-      user: req.userId,
-    });
-
-    if (existingRepository) {
-      return res.status(400).json({
-        message: "Repository already connected",
-      });
-    }
-
-    // ----------------------------------------------------------
-    // 10. Save repository information in MongoDB
-    // ----------------------------------------------------------
-
-    const repository = await Repository.create({
-      // Logged-in user
-      user: req.userId,
-
-      // Repository name
-      name: githubData.name,
-
-      // Example:
-      // Divyal89/Quick-AI
-      fullName: githubData.full_name,
-
-      // GitHub repository URL
-      githubUrl: githubData.html_url,
-
-      // Repository description
-      description: githubData.description || "",
-
-      // Main programming language
-      language: githubData.language || "Unknown",
-
-      // Number of GitHub stars
-      stars: githubData.stargazers_count || 0,
-
-      // Number of files successfully read
-      files: repositoryFiles.length,
-
-      // Current repository status
-      status: "connected",
-    });
 
     // ----------------------------------------------------------
     // 11. Send response back to frontend

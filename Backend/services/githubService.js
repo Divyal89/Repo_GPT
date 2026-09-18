@@ -10,12 +10,6 @@ const githubApi = axios.create({
 
 // Add the token dynamically on every request, not baked in at import time
 githubApi.interceptors.request.use((config) => {
-  console.log(
-    "Using token:",
-    process.env.GITHUB_TOKEN
-      ? process.env.GITHUB_TOKEN.slice(0, 15) + "..."
-      : "MISSING",
-  );
   config.headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   return config;
 });

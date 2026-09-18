@@ -7,11 +7,16 @@ import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import repositoryRoutes from "./routes/repositoryRoutes.js";
 
-console.log("Token starts with:", process.env.GITHUB_TOKEN?.substring(0, 12));
+import {
+  testQdrantConnection,
+  createRepoGPTCollection,
+} from "./services/vectorService.js";
 
 const app = express();
 
 connectDB();
+testQdrantConnection();
+createRepoGPTCollection();
 
 app.use(cors());
 app.use(express.json());
