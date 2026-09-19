@@ -86,3 +86,82 @@ export const storeEmbeddings = async (embeddedChunks, repositoryId) => {
     throw error;
   }
 };
+
+//
+//-----------------------FROM NOW WE ARE GOING REVESERVE MEAN TAKING USER ----------------------------QUESTION AND CONVERTING INTO CHUNKS TO GIVE ANS --------------------//
+
+// Search Qdrant for code chunks that are most similar
+// to the user's question embedding.
+
+// ============================================================
+// SEARCH SIMILAR CODE CHUNKS
+// ============================================================
+
+// Search Qdrant for code chunks that are most similar
+// to the user's question embedding.
+export const searchSimilarChunks = async (
+  queryEmbedding,
+  repositoryId,
+  limit = 5,
+) => {
+  try {
+    const results = await qdrant.query("repogpt", {
+      // The user's question converted into a 384-dimensional vector
+      query: queryEmbedding,
+
+      // Return the top 5 most similar chunks
+      limit: limit,
+
+      // Only search inside the selected repository.
+      filter: {
+        must: [
+          {
+            key: "repositoryId",
+            match: {
+              value: repositoryId.toString(),
+            },
+          },
+        ],
+      },
+
+      // Return the original file path and code content
+      with_payload: true,
+    });
+
+    // Qdrant returns matching vectors inside "points".
+    const points = results.points;
+
+    console.log(`Found ${points.length} similar chunks`);
+
+    return points;
+  } catch (error) {
+    console.error("Similarity search failed:");
+    console.error("Message:", error.message);
+    console.error("Response:", error.response?.data);
+
+    throw error;
+  }
+};
+
+// ============================================================
+// CREATE REPOSITORY ID PAYLOAD INDEX
+// ============================================================
+
+// Create an index for repositoryId so Qdrant can efficiently
+// filter vectors belonging to a specific repository.
+export const createRepositoryPayloadIndex = async () => {
+  try {
+    await qdrant.createPayloadIndex("repogpt", {
+      field_name: "repositoryId",
+      field_schema: "keyword",
+      wait: true,
+    });
+
+    console.log("Qdrant repositoryId payload index created");
+  } catch (error) {
+    console.error(
+      "Failed to create repositoryId payload index:",
+      error.message,
+    );
+  }
+};

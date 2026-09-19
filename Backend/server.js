@@ -10,6 +10,7 @@ import repositoryRoutes from "./routes/repositoryRoutes.js";
 import {
   testQdrantConnection,
   createRepoGPTCollection,
+  createRepositoryPayloadIndex,
 } from "./services/vectorService.js";
 
 const app = express();
@@ -17,6 +18,7 @@ const app = express();
 connectDB();
 testQdrantConnection();
 createRepoGPTCollection();
+createRepositoryPayloadIndex();
 
 app.use(cors());
 app.use(express.json());
