@@ -90,8 +90,6 @@ export const storeEmbeddings = async (embeddedChunks, repositoryId) => {
 //
 //-----------------------FROM NOW WE ARE GOING REVESERVE MEAN TAKING USER ----------------------------QUESTION AND CONVERTING INTO CHUNKS TO GIVE ANS --------------------//
 
-// Search Qdrant for code chunks that are most similar
-// to the user's question embedding.
 
 // ============================================================
 // SEARCH SIMILAR CODE CHUNKS
