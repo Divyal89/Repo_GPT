@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 
 import userRoutes from "./routes/userRoutes.js";
 import repositoryRoutes from "./routes/repositoryRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 import {
   testQdrantConnection,
@@ -26,6 +27,7 @@ app.use(express.json());
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/repositories", repositoryRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
