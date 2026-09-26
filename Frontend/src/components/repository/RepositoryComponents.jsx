@@ -54,12 +54,13 @@ export const RepositoryCard = ({ repo, onOpen }) => {
       </div>
 
       <div className="flex gap-2 pt-4 border-t border-gray-800">
-        <Link to={`/repositories/${repo.id}/workspace`} className="flex-1">
+        <Link to={`/repositories/${repo._id}/workspace`} className="flex-1">
           <Button variant="primary" size="sm" className="w-full">
             Open Workspace
           </Button>
         </Link>
-        <Link to={`/repositories/${repo.id}/code`} className="flex-1">
+
+        <Link to={`/repositories/${repo._id}/code`} className="flex-1">
           <Button variant="secondary" size="sm" className="w-full">
             View Code
           </Button>

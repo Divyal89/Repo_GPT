@@ -15,6 +15,7 @@ import CodeExplorer from "./pages/CodeExplorer";
 import ChatHistory from "./pages/ChatHistory";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ChatConversation from "./pages/ChatConversation";
 
 function App() {
   return (
@@ -73,6 +74,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ChatHistory />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat/:chatId"
+          element={
+            <ProtectedRoute>
+              <ChatConversation />
             </ProtectedRoute>
           }
         />
