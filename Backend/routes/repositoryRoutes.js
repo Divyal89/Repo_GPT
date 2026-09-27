@@ -3,6 +3,7 @@ import express from "express";
 import {
   connectRepository,
   getRepositories,
+  getRepositoryFiles,
 } from "../controllers/RepositoryController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -16,6 +17,8 @@ const router = express.Router();
 
 router.post("/connect", protect, connectRepository);
 router.get("/", protect, getRepositories);
+// Get files from a connected repository
+router.get("/:id/files", protect, getRepositoryFiles);
 
 // Temporary route to test Qdrant similarity search
 router.post("/search", protect, async (req, res) => {

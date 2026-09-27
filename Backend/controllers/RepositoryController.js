@@ -351,3 +351,83 @@ export const getRepositories = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// GET FILES FROM A CONNECTED REPOSITORY
+// ============================================================
+
+export const getRepositoryFiles = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ----------------------------------------------------------
+    // 1. Find repository in MongoDB
+    // ----------------------------------------------------------
+
+    // We also check the logged-in user.
+    // This prevents one user from accessing another user's
+    // connected repository.
+    const repository = await Repository.findOne({
+      _id: id,
+      user: req.userId,
+    });
+
+    if (!repository) {
+      return res.status(404).json({
+        message: "Repository not found",
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 2. Extract GitHub owner and repository name
+    // ----------------------------------------------------------
+
+    const urlParts = repository.githubUrl.split("/");
+
+    const owner = urlParts[urlParts.length - 2];
+    const repo = urlParts[urlParts.length - 1];
+
+    console.log("Getting files for:", owner, repo);
+
+    // ----------------------------------------------------------
+    // 3. Get GitHub repository information
+    // ----------------------------------------------------------
+
+    const githubData = await getGithubRepository(owner, repo);
+
+    const branch = githubData.default_branch;
+
+    // ----------------------------------------------------------
+    // 4. Get all files from GitHub
+    // ----------------------------------------------------------
+
+    const files = await getAllGithubFiles(owner, repo, branch);
+
+    console.log("Total GitHub files:", files.length);
+
+    // ----------------------------------------------------------
+    // 5. Return file paths
+    // ----------------------------------------------------------
+
+    // We only need the paths here.
+    // The actual file content will be loaded separately
+    // when the user selects a file.
+    const repositoryFiles = files.map((file) => ({
+      path: file.path,
+      type: file.type,
+    }));
+
+    res.status(200).json({
+      repositoryId: repository._id,
+      branch,
+      files: repositoryFiles,
+    });
+  } catch (error) {
+    console.error("Get repository files error:", error.message);
+
+    res.status(500).json({
+      message: "Failed to get repository files",
+      error: error.message,
+    });
+  }
+};

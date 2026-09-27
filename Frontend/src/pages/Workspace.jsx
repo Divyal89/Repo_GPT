@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -15,7 +15,6 @@ import {
 } from "../components/chat/ChatComponents";
 
 import {
-  mockRepositories,
   mockFileTree,
   mockChatSuggestions,
   mockCodeFile,
@@ -32,9 +31,47 @@ export default function Workspace() {
   // id = 6aacc480...
   // --------------------------------------------------
   const { id } = useParams();
-  console.log("Workspace repository ID:", id);
 
   const location = useLocation();
+
+  const [repo, setRepo] = useState(null);
+  const [repoLoading, setRepoLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRepository = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get(
+          "http://localhost:5000/api/repositories",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        console.log("Workspace repositories:", response.data.repositories);
+
+        const foundRepository = response.data.repositories.find(
+          (repository) => repository._id === id,
+        );
+
+        console.log("Workspace repository:", foundRepository);
+
+        setRepo(foundRepository || null);
+      } catch (error) {
+        console.error(
+          "Workspace repository fetch error:",
+          error.response?.data || error.message,
+        );
+      } finally {
+        setRepoLoading(false);
+      }
+    };
+
+    fetchRepository();
+  }, [id]);
 
   // --------------------------------------------------
   // UI STATE
@@ -81,7 +118,6 @@ export default function Workspace() {
   // The important part is that the real MongoDB
   // repository ID comes from `id` above.
   //
-  const repo = mockRepositories.find((r) => r.id === id) || mockRepositories[0];
 
   // --------------------------------------------------
   // TOGGLE FILE TREE FOLDER
@@ -316,6 +352,22 @@ export default function Workspace() {
     setCodePanelOpen(true);
   };
 
+  if (repoLoading) {
+    return (
+      <div className="flex h-screen bg-dark items-center justify-center">
+        <p className="text-gray-400">Loading repository...</p>
+      </div>
+    );
+  }
+
+  if (!repo) {
+    return (
+      <div className="flex h-screen bg-dark items-center justify-center">
+        <p className="text-red-400">Repository not found.</p>
+      </div>
+    );
+  }
+
   // --------------------------------------------------
   // UI
   // --------------------------------------------------
@@ -343,10 +395,12 @@ export default function Workspace() {
 
             <Badge>main</Badge>
 
-            <Badge variant="success">Indexed</Badge>
+            <Badge variant={repo.status === "ready" ? "success" : "warning"}>
+              {repo.status === "ready" ? "Ready" : repo.status}
+            </Badge>
 
             <div className="ml-auto flex items-center gap-2 text-sm text-gray-400">
-              <span>Last indexed: {repo.lastIndexed}</span>
+              <span>{repo.files} files</span>
             </div>
           </div>
 
