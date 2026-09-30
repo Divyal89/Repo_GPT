@@ -14,11 +14,7 @@ import {
   CodeViewer,
 } from "../components/chat/ChatComponents";
 
-import {
-  mockFileTree,
-  mockChatSuggestions,
-  mockCodeFile,
-} from "../data/mockData";
+import { mockChatSuggestions, mockCodeFile } from "../data/mockData";
 
 import { Settings, Search } from "lucide-react";
 
@@ -33,6 +29,43 @@ export default function Workspace() {
   const { id } = useParams();
 
   const location = useLocation();
+
+  const [fileTree, setFileTree] = useState(null);
+  const [filesLoading, setFilesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get(
+          `http://localhost:5000/api/repositories/${id}/files`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        console.log("Repository files:", response.data);
+
+        const tree = buildFileTree(response.data.files);
+
+        setFileTree(tree);
+      } catch (error) {
+        console.error(
+          "Failed to fetch repository files:",
+          error.response?.data || error.message,
+        );
+      } finally {
+        setFilesLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchFiles();
+    }
+  }, [id]);
 
   const [repo, setRepo] = useState(null);
   const [repoLoading, setRepoLoading] = useState(true);
@@ -73,6 +106,50 @@ export default function Workspace() {
     fetchRepository();
   }, [id]);
 
+  const buildFileTree = (files) => {
+    const root = {
+      name: "root",
+      type: "folder",
+      children: [],
+    };
+
+    files.forEach((file) => {
+      const parts = file.path.split("/");
+
+      let current = root;
+
+      parts.forEach((part, index) => {
+        const isFile = index === parts.length - 1;
+
+        if (isFile) {
+          current.children.push({
+            name: part,
+            type: "file",
+            path: file.path,
+          });
+        } else {
+          let folder = current.children.find(
+            (child) => child.name === part && child.type === "folder",
+          );
+
+          if (!folder) {
+            folder = {
+              name: part,
+              type: "folder",
+              children: [],
+            };
+
+            current.children.push(folder);
+          }
+
+          current = folder;
+        }
+      });
+    });
+
+    return root;
+  };
+
   // --------------------------------------------------
   // UI STATE
   // --------------------------------------------------
@@ -100,6 +177,44 @@ export default function Workspace() {
 
   // Stores selected source file
   const [selectedSource, setSelectedSource] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileContent, setFileContent] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
+
+  const handleFileClick = async (file) => {
+    try {
+      setFileLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        `http://localhost:5000/api/repositories/${id}/files/content`,
+        {
+          params: {
+            path: file.path,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log("File content:", response.data);
+
+      setSelectedFile(file);
+      setFileContent(response.data.content);
+
+      // Open the code panel automatically
+      setCodePanelOpen(true);
+    } catch (error) {
+      console.error(
+        "Failed to load file:",
+        error.response?.data || error.message,
+      );
+    } finally {
+      setFileLoading(false);
+    }
+  };
 
   // Controls left file explorer
   const [filePanelOpen, setFilePanelOpen] = useState(true);
@@ -444,11 +559,22 @@ export default function Workspace() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2">
-                  <FileTreeItem
-                    item={mockFileTree}
-                    expanded={expandedFolders[mockFileTree.name]}
-                    onToggle={handleToggleFolder}
-                  />
+                  {filesLoading ? (
+                    <div className="p-4 text-sm text-gray-400">
+                      Loading files...
+                    </div>
+                  ) : fileTree ? (
+                    <FileTreeItem
+                      item={fileTree}
+                      expanded={expandedFolders[fileTree.name]}
+                      onToggle={handleToggleFolder}
+                      onFileClick={handleFileClick}
+                    />
+                  ) : (
+                    <div className="p-4 text-sm text-gray-400">
+                      No files found
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -519,13 +645,15 @@ export default function Workspace() {
             >
               <CodeViewer
                 file={
-                  selectedSource
+                  selectedFile
                     ? {
-                        ...mockCodeFile,
-                        filename: selectedSource.file,
+                        filename: selectedFile.name,
+                        path: selectedFile.path,
+                        content: fileContent,
                       }
-                    : mockCodeFile
+                    : null
                 }
+                loading={fileLoading}
                 onClose={() => setCodePanelOpen(false)}
               />
             </div>

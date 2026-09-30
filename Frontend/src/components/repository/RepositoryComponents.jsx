@@ -70,7 +70,13 @@ export const RepositoryCard = ({ repo, onOpen }) => {
   );
 };
 
-export const FileTreeItem = ({ item, level = 0, expanded, onToggle }) => {
+export const FileTreeItem = ({
+  item,
+  level = 0,
+  expanded,
+  onToggle,
+  onFileClick,
+}) => {
   const isFolder = item.type === "folder";
   const indent = level * 16;
 
@@ -87,7 +93,7 @@ export const FileTreeItem = ({ item, level = 0, expanded, onToggle }) => {
 
   const getIcon = (name) => {
     const ext = name.split(".").pop();
-    return icons[ext] || icons["file"] || "📄";
+    return icons[ext] || "📄";
   };
 
   return (
@@ -95,11 +101,21 @@ export const FileTreeItem = ({ item, level = 0, expanded, onToggle }) => {
       <div
         className="flex items-center gap-1 px-2 py-1 hover:bg-gray-800 rounded cursor-pointer transition-colors"
         style={{ paddingLeft: `${indent}px` }}
-        onClick={() => isFolder && onToggle?.(item)}
+        onClick={() => {
+          if (isFolder) {
+            // Folder clicked → expand/collapse folder
+            onToggle?.(item);
+          } else {
+            // File clicked → open file
+            console.log("FILE CLICKED:", item);
+            onFileClick?.(item);
+          }
+        }}
       >
         <span className="text-lg">
           {isFolder ? (expanded ? "📂" : "📁") : getIcon(item.name)}
         </span>
+
         <span className="text-sm text-gray-300">{item.name}</span>
       </div>
 
@@ -111,6 +127,7 @@ export const FileTreeItem = ({ item, level = 0, expanded, onToggle }) => {
               item={child}
               level={level + 1}
               onToggle={onToggle}
+              onFileClick={onFileClick}
             />
           ))}
         </div>

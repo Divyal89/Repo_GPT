@@ -431,3 +431,85 @@ export const getRepositoryFiles = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// GET CONTENT OF A SINGLE REPOSITORY FILE
+// ============================================================
+
+export const getRepositoryFileContent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { path } = req.query;
+
+    // ----------------------------------------------------------
+    // 1. Validate file path
+    // ----------------------------------------------------------
+
+    if (!path) {
+      return res.status(400).json({
+        message: "File path is required",
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 2. Check that repository belongs to logged-in user
+    // ----------------------------------------------------------
+
+    const repository = await Repository.findOne({
+      _id: id,
+      user: req.userId,
+    });
+
+    if (!repository) {
+      return res.status(404).json({
+        message: "Repository not found",
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 3. Extract GitHub owner and repository name
+    // ----------------------------------------------------------
+
+    const urlParts = repository.githubUrl.split("/");
+
+    const owner = urlParts[urlParts.length - 2];
+    const repo = urlParts[urlParts.length - 1];
+
+    console.log("Reading file:");
+    console.log("Owner:", owner);
+    console.log("Repository:", repo);
+    console.log("Path:", path);
+
+    // ----------------------------------------------------------
+    // 4. Get the repository branch
+    // ----------------------------------------------------------
+
+    const githubData = await getGithubRepository(owner, repo);
+
+    const branch = githubData.default_branch;
+
+    // ----------------------------------------------------------
+    // 5. Get actual file content from GitHub
+    // ----------------------------------------------------------
+
+    const content = await getGithubFileContent(owner, repo, path);
+
+    // ----------------------------------------------------------
+    // 6. Send content to frontend
+    // ----------------------------------------------------------
+
+    res.status(200).json({
+      repositoryId: repository._id,
+      path,
+      branch,
+      content,
+    });
+  } catch (error) {
+    console.error("Get repository file content error:", error.message);
+
+    res.status(500).json({
+      message: "Failed to get file content",
+      error: error.message,
+    });
+  }
+};

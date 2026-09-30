@@ -4,6 +4,7 @@ import {
   connectRepository,
   getRepositories,
   getRepositoryFiles,
+  getRepositoryFileContent,
 } from "../controllers/RepositoryController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -116,5 +117,8 @@ router.post("/rag-test", protect, async (req, res) => {
     });
   }
 });
+
+// Get content of a specific repository file
+router.get("/:id/files/content", protect, getRepositoryFileContent);
 
 export default router;

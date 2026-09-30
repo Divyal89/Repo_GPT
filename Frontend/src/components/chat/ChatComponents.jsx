@@ -144,14 +144,73 @@ export const SuggestedQuestion = ({ question, onClick }) => {
   );
 };
 
-export const CodeViewer = ({ file, onClose }) => {
+export const CodeViewer = ({ file, onClose, loading = false }) => {
   const [copied, setCopied] = useState(false);
 
+  // No file has been selected yet
+  if (!file) {
+    return (
+      <div className="flex flex-col h-full bg-gray-950 rounded-lg border border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+          <div>
+            <p className="text-gray-400 text-xs uppercase tracking-wide">
+              File
+            </p>
+            <p className="font-mono text-sm text-gray-500">No file selected</p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center text-gray-500">
+          Select a file from the File Explorer
+        </div>
+      </div>
+    );
+  }
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(file.code);
+    navigator.clipboard.writeText(file.content || "");
+
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
+
+  // Show loading while file content is being fetched
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full bg-gray-950 rounded-lg border border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+          <div>
+            <p className="text-gray-400 text-xs uppercase tracking-wide">
+              File
+            </p>
+
+            <p className="font-mono text-sm text-white">{file.filename}</p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center text-gray-400">
+          Loading file...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-950 rounded-lg border border-gray-800">
@@ -159,8 +218,10 @@ export const CodeViewer = ({ file, onClose }) => {
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <div>
           <p className="text-gray-400 text-xs uppercase tracking-wide">File</p>
+
           <p className="font-mono text-sm text-white">{file.filename}</p>
         </div>
+
         <div className="flex gap-2">
           <button
             onClick={handleCopy}
@@ -173,6 +234,7 @@ export const CodeViewer = ({ file, onClose }) => {
               <Copy size={18} />
             )}
           </button>
+
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
@@ -186,9 +248,11 @@ export const CodeViewer = ({ file, onClose }) => {
       <div className="flex-1 overflow-auto p-4 bg-gray-900">
         <pre className="font-mono text-sm text-gray-300 leading-relaxed">
           <code>
-            {file.code.split("\n").map((line, idx) => {
+            {(file.content || "").split("\n").map((line, idx) => {
               const lineNumber = idx + 1;
+
               const isHighlighted = file.highlightedLines?.includes(lineNumber);
+
               return (
                 <div
                   key={idx}
@@ -199,6 +263,7 @@ export const CodeViewer = ({ file, onClose }) => {
                   <span className="text-gray-600 select-none w-8 text-right flex-shrink-0">
                     {lineNumber}
                   </span>
+
                   <span>{line}</span>
                 </div>
               );
